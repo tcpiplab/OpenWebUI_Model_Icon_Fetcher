@@ -13,6 +13,7 @@ The script:
     5. Places the icon files under the static folder so the UI can serve them.
 
 Usage (run from the repository root or from a mounted volume):
+    $ export OLLAMA_TURBO_API_KEY="your-api-key"  # if needed
     $ python3 scripts/generate_model_icons.py \
         --openai-key "$OPENAI_API_KEY" \
         --ollama-turbo-url http://remote-ollama:8080/v1/models \
@@ -115,7 +116,7 @@ def resolve_icon_path(model_id: str, icon_dir: Path) -> Path:
     """
     Return the final path where the icon file should live.
     The script will attempt to download a provider‑specific image; if none
-    can be found it will fallback to `default.png` placed by the user.
+    can be found it will fall back to `default.png` placed by the user.
     """
     filename = f'{slugify(model_id)}.png'
     return icon_dir / filename
@@ -182,7 +183,7 @@ def build_icon_map(models: Set[str], icon_dir: Path) -> Dict[str, str]:
     for model in models:
         target = resolve_icon_path(model, icon_dir)
         if not target.is_file():
-            # Try to fetch a HF card image first
+            # Try to fetch an HF card image first
             if download_hf_card_image(model, target):
                 pass
             elif fallback_provider_badge(model, target):
@@ -205,8 +206,6 @@ def parse_arguments() -> argparse.Namespace:
                         help='Base URL for local Ollama daemon')
     parser.add_argument('--ollama-turbo-url',
                         help='Full URL to an Ollama‑Turbo /v1/models endpoint')
-    parser.add_argument('--ollama-turbo-key',
-                        help='API key for Ollama‑Turbo if required')
     parser.add_argument('--icon-dir', default='./public/icons',
                         help='Directory where PNG icons will be stored')
     parser.add_argument('--static-json', default='./public/icons/model-icons.json',
@@ -226,7 +225,7 @@ def main() -> None:
         all_models.update(fetch_openai_models(api_key))
 
     if args.ollama_turbo_url:
-        api_key = args.ollama_turbo_key or ''
+        api_key = os.getenv('OLLAMA_TURBO_API_KEY', '')
         all_models.update(fetch_ollama_turbo_models(args.ollama_turbo_url, api_key))
 
     if not all_models:
